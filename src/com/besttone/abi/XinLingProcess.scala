@@ -15,12 +15,14 @@ object XinLingProcess{
       System.err.println("Usage: XinLingProcess <input> <output>")
       System.exit(1)
     }
-    val conf = new SparkConf().setAppName("XinLingProcess").setMaster("local")
+    //val conf = new SparkConf().setAppName("XinLingProcess").setMaster("local")
+    val conf = new SparkConf().setAppName("XinLingProcess")
+
     val sc = new SparkContext(conf)
     val sqlContext= new SQLContext(sc)
 
     val txt = sc.textFile(args(0))
-    val tel_num= txt.flatMap(line => line.split(","))
+    val tel_num= txt.flatMap(line => line.split(",")).filter(_.length()>1)
     val result=tel_num.map(line=>(line,1)).reduceByKey(_+_)
     //result.saveAsTextFile(args(1))
     import sqlContext.implicits._
@@ -29,7 +31,9 @@ object XinLingProcess{
 
     val xl2 = sqlContext.sql("select tel_num,cnts  from t_xinling order by cnts desc")
     xl2.take(10).foreach(println)
-    xl2.write.parquet(args(1))
+    //xl2.collect().foreach(println)
+    xl2.toDF().write.parquet(args(1))
+
 
 
     sc.stop
